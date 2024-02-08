@@ -1,7 +1,7 @@
 var apiKey = 'a34c2b8d2c8d04d52a0bced017c36070';
 var formEl = $('#form');
 var todaysWeather = $('#currentWeather');
-var forcast = $('#5day');
+var forecast = $('#forecast');
 var searchHistory = [];
 var historyEl = $('#history');
 var currentPicEl = $('#icon');
@@ -14,7 +14,7 @@ function weather(city){
     return response.json();
 }).then(function (data) {
     console.log("Current Weather: ", data);
-
+//Converts JSON data in usable formats for inputting into the DOM
     let todaysDate = new Date(data.dt*1000);
             console.log(todaysDate);
             let day = todaysDate.getDate();
@@ -24,6 +24,8 @@ function weather(city){
             let iconPic = data.weather[0].icon;
             currentPicEl.prop("src","https://openweathermap.org/img/wn/" + iconPic + "@2x.png");
             currentPicEl.prop("alt", data.weather[0].description);
+            currentPicEl.css("height", '200px');
+            currentPicEl.css("width", '200px');
             $('#currentTemp').text("Temperature: " + Math.round(convertTemp(data.main.temp)) + " &#176F");
             $('#currentHumidity').text("Humidity: " + data.main.humidity + "%");
             $('#currentWindSpeed').text("Wind Speed: " + data.wind.speed + " MPH");
@@ -36,6 +38,8 @@ function weather(city){
 }
 
 function forecastedWeather(lat, lon){
+    //Removes any previously created elements
+    $('#forecast').empty();
     console.log(lat, lon);
     var apiQuery = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}`;
 
@@ -43,6 +47,7 @@ function forecastedWeather(lat, lon){
      return response.json();
  }).then(function (data) {
 
+    //Iterates through all of the forecasted time blocks and shows only 1 per day
     for (let i= 0; i < 5; i++) {
         console.log(i);
         let j = i + (i*7);
@@ -59,6 +64,7 @@ function forecastedWeather(lat, lon){
         let dayHumid = dayData.main.humidity;
         let forecastAlt = dayData.weather[0].description;
 
+        //Creating elements to include
         let divEl1 = document.createElement("div");
         divEl1.className = "card";
         console.log(divEl1);
@@ -68,6 +74,8 @@ function forecastedWeather(lat, lon){
         imgEl.src = iconPic;
         imgEl.alt = forecastAlt;
         imgEl.className = "card-img-top";
+        imgEl.style.height = '200px';
+        imgEl.style.width = '200px';
         console.log(imgEl);
 
         let divEl2 = document.createElement("div");
@@ -91,7 +99,7 @@ function forecastedWeather(lat, lon){
         console.log(humidEl);
 
         console.log($('.forecast'));
-
+        //Appends elements to the DOM
         document.getElementById('forecast').appendChild(divEl1);
         divEl1.append(imgEl);
         divEl1.append(divEl2);
@@ -105,80 +113,60 @@ function forecastedWeather(lat, lon){
         
     })
 
+
 }
 
-/** 
-let divEl1 = '<div class="card"></div>';
-let imgEl = '<img src="' + iconPic + '" class="card-img-top" alt="' + dayData.weather[0].description +  '"></img>';
-let divEl2 = '<div class="card-body"></div>';
-let titleEl = '<h5> ' + month + '/ ' + day + '/ ' + year + ' </h5>';
-let tempEl = '<p>Temperature: ' + theTemp + 'F</p>';
-let windEl = '<p>Wind Speed: ' + dayData.wind.speed + 'MPH' + '</p>';
-let humidEl = '<p>Humidity: ' + dayData.main.humidity + '%'+ '</p>';
-
-$('#5day').append(divEl1);
-divEl1.append(imgEl);
-divEl1.append(divEl2);
-divEl2.append(titleEl);
-divEl2.append(tempEl);
-divEl2.append(windEl);
-divEl2.append(humidEl);
-/** 
-<div>
-<img class="photo" src="" class="card-img-top" alt="">
-<div class="card-body">
-  <h5 class="today">Today's Weather</h5>
-  <p class="temperature">Temperature</p>
-  <p class="windSpeed">Wind Speed</p>
-  <p class="humidity">Humidity</p>
-</div>
-</div>
-*/
-
- /** 
-        todayEl[i].text(month + "/ " + day + "/ " + year);
-        photoEl[i].prop("src","https://openweathermap.org/img/wn/" + iconPic + "@2x.png");
-        photoEl[i].prop("alt", dayData.weather[0].description);
-        temperatureEl[i].text("Temperature: " + theTemp + "F");
-        humidityEl[i].text("Humidity: " + dayData.main.humidity + "%");
-        windSpeedEl[i].text("Wind Speed: " + dayData.wind.speed + " MPH"); 
-        */
-
-
- 
+//Event listener for accepting the search city, saving to localStorage
 formEl.on('submit', function(e){
     e.preventDefault();
     let searchCity = $('#citySearch').val();
-    console.log(searchCity);
     searchHistory.push(searchCity);
-    console.log(searchHistory);
     localStorage.setItem('search', searchHistory);
+    //Removes historical search buttons and replaces them with new values from localStorage
+    historyEl.empty();
+    showHistory();
     weather(searchCity);
 }
 )
 
 function showHistory(){
-    let history = localStorage.getItem('search');
-    for (let i = 0; i < history.length; i++) {
+    let historyString = "";
+    historyString = localStorage.getItem('search');
+    //Turns returned string into an array for iteration
+    let history = [];
+    if (historyString.length != null){
+     history = historyString.split(",");
+     for (let i = 0; i < history.length; i++) {
         var buttonEl = '<button type="button" class="btn btn-primary w-100 my-2">'+ history[i] + '</button>';
         historyEl.append(buttonEl);
         }
-        historyEl.on('click', function(){
-            weather(buttonEl.val());
         }
-        )
+    else {
+        return;
+    }
         
     }
-
+   
+historyEl.on('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        let historicalSearch = e.target.textContent;
+        console.log(historicalSearch);
+        weather(historicalSearch); 
+})   
+    
+   
+        
+//Erases local storage
  $("#clearHistory").on("click",function() {
         searchHistory = [];
+        historyEl.empty();
         localStorage.removeItem('search');
-        showHistory();
         return searchHistory;
     })
 
-
+//Converts Kelvin to fahrenheit
 function convertTemp(temp){
-    let farenheit = (temp-273.15)*1.8 + 32
-    return farenheit;
+    let fahrenheit = (temp-273.15)*1.8 + 32
+    return fahrenheit;
 }
